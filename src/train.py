@@ -57,6 +57,7 @@ def train(data_loader, model, optimizer, cuda, criterion, epoch, log_int=20):
         if cuda:
             im, im_neg, sk, w2v = im.cuda(), im_neg.cuda(), sk.cuda(), w2v.cuda()
         
+        # #breakpoint()
         optimizer.zero_grad()
         bs = im.size(0)
         # Output
@@ -96,6 +97,7 @@ def train(data_loader, model, optimizer, cuda, criterion, epoch, log_int=20):
 def main():
     print('Prepare data')
     transform = transforms.Compose([transforms.ToTensor()])
+    #breakpoint()
     train_data, [valid_sk_data, valid_im_data], [test_sk_data, test_im_data], dict_class = load_data(args, transform)    
     train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.prefetch, pin_memory=True)
     valid_sk_loader = DataLoader(valid_sk_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=True)
@@ -171,6 +173,7 @@ def main():
         # Update learning rate
         adjust_learning_rate(optimizer, epoch)
 
+        #breakpoint()
         loss_train, loss_sem, loss_dom, loss_spa = train(train_loader, [im_net, sk_net], optimizer, args.cuda, criterion, epoch, args.log_interval)
         map_valid = test(valid_im_loader, valid_sk_loader, [im_net, sk_net], args)
 
