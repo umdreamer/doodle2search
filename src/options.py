@@ -18,7 +18,7 @@ class Options():
                                      'quickdraw_extend'],
                             help='Choose between (Sketchy).')
         # Model parameters
-        parser.add_argument('--data_path', '-dp', type=str, default='../dataset/', help='Dataset root path.')
+        parser.add_argument('--data_path', '-dp', type=str, default='./datasets/', help='Dataset root path.')
         parser.add_argument('--emb_size', type=int, default=256, help='Embedding Size.')
         parser.add_argument('--grl_lambda', type=float, default=0.5, help='Lambda used to normalize the GRL layer.')
         parser.add_argument('--nopretrain', action='store_false', help='Loads a pretrained model (Default: True).')

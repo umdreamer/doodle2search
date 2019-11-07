@@ -6,7 +6,7 @@ from gensim.models import Word2Vec
 def create_class_embeddings(vocab, dataset = 'sketchy'):
 
     google_300_corpus = api.load("word2vec-google-news-300")
-    model = Word2Vec(google_300_corpus)
+    model = google_300_corpus
     w2v_class = []
     for i, voca in enumerate(vocab):
         print(voca)

@@ -19,7 +19,7 @@ from data.data_utils import *
 def Sketchy_Extended(args, transform='None'):
 
     # Getting the classes
-    class_labels_file = os.path.join(args.data_path, 'Sketchy', 'class_labels.txt')
+    class_labels_file = os.path.join(args.data_path, 'sketchy', 'class_labels.txt')
     list_class = open(class_labels_file).read().splitlines()
     dicts_class = create_dict_texts(list_class)
 
