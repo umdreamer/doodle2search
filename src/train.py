@@ -143,6 +143,7 @@ def main():
     optimizer = torch.optim.SGD(list(im_net.parameters()) + list(sk_net.parameters()) + list(criterion.parameters()), args.learning_rate, momentum=args.momentum, weight_decay=args.decay, nesterov=True)
 
     print('Check CUDA')
+    #breakpoint()
     if args.cuda and args.ngpu > 1:
         print('\t* Data Parallel')
         im_net = nn.DataParallel(im_net, device_ids=list(range(args.ngpu)))
