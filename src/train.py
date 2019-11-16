@@ -84,6 +84,11 @@ def train(data_loader, model, optimizer, cuda, criterion, epoch, log_int=20):
         sk_feat, _ = sk_net(sk) # Sketch encoding and projection to semantic space
         
         # LOSS
+        # Note: here we should use criterion.module(), instead of criterion().
+        # Because in DataParallel() uses self.module to point to the input model.
+        # The DataParallel can only parallel forward(), can not parallel backward().
+        # So criterion should NOT be parallel.
+         # Use criterion.module()
         loss, loss_sem, loss_dom, loss_spa = criterion.module(im_feat, sk_feat, w2v, im_feat_neg, i)
         
         # Gradiensts and update
