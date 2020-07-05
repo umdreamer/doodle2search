@@ -19,7 +19,7 @@ from data.data_utils import *
 def Sketchy_Extended(args, transform='None'):
 
     # Getting the classes
-    class_labels_file = os.path.join(args.data_path, 'Sketchy', 'class_labels.txt')
+    class_labels_file = os.path.join(args.data_path, 'sketchy', 'class_labels.txt')
     list_class = open(class_labels_file).read().splitlines()
     dicts_class = create_dict_texts(list_class)
 
@@ -27,16 +27,19 @@ def Sketchy_Extended(args, transform='None'):
     np.random.seed(args.seed)
 
     # Create the class embeddings
-    if os.path.isfile('./data/semantic_labels_sketchy.npy'):
-        class_emb = np.load('./data/semantic_labels_sketchy.npy')  #../data/semantic_labels_sketchy.npy
-        with open("./data/vocab_sketchy.pkl", "rb") as input_file:
+    semantic_labels_filename = './src/data/semantic_labels_sketchy.npy'
+    if os.path.isfile(semantic_labels_filename):
+        class_emb = np.load(semantic_labels_filename)  #../data/semantic_labels_sketchy.npy
+        vocab_filename = './src/data/vocab_sketchy.pkl'
+        with open(vocab_filename, 'rb') as input_file:
             vocab = pickle.load(input_file)
     else:
         class_emb = create_class_embeddings(list_class, args.dataset)
         vocab = list_class
 
     # Read test classes
-    with open("./data/zeroshot_classes_sketchy.txt") as fp:              #zeroshot_classes.txt
+    zeroshot_classes_filename = './src/data/zeroshot_classes_sketchy.txt'
+    with open(zeroshot_classes_filename) as fp:              #zeroshot_classes.txt
         test_class = fp.read().splitlines()
 
     list_class = [x for x in list_class if x not in test_class]
