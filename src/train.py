@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import torch.nn as nn
+from torch.autograd import Variable
 
 import glob
 import numpy as np
@@ -51,14 +52,24 @@ def train(data_loader, model, optimizer, cuda, criterion, epoch, log_int=20):
     sk_net.train()
     torch.set_grad_enabled(True)
 
+#    im_net = im_net.to('cuda:0')
+#    sk_net = sk_net.to('cuda:0')
+#    criterion = criterion.to('cuda:0')
+    
+
     end = time.time()
     for i, (sk, im, im_neg, w2v, _, _) in enumerate(data_loader):
+        #print('the %d-th batch' %(i))
         # Prepare input data
+        im, im_neg, sk, w2v = im.to('cuda:0'), im_neg.to('cuda:0'), sk.to('cuda:0'), w2v.to('cuda:0')
+        #im, im_neg, sk, w2v = Variable(im.cuda()), Variable(im_neg.cuda()), Variable(sk.cuda()), Variable(w2v.cuda())
         if cuda:
-            im, im_neg, sk, w2v = im.cuda(), im_neg.cuda(), sk.cuda(), w2v.cuda()
+            pass
+            #im, im_neg, sk, w2v = Variable(im.cuda()), Variable(im_neg.cuda()), Variable(sk.cuda()), Variable(w2v.cuda())
         
-        print('cuda device: im=%d,im_neg=%d,sk=%d,w2v=%d' % (im.get_device(), im_neg.get_device(), sk.get_device(), w2v.get_device()))
-        breakpoint()
+        #print('cuda device: im=%d,im_neg=%d,sk=%d,w2v=%d' % (im.device.index, im_neg.device.index, sk.device.index, w2v.device.index))
+        #print('cuda device: im_net=%d,sk_net=%d,criterion=%d' % (next(im_net.parameters()).is_cuda, next(sk_net.parameters()).is_cuda, next(criterion.parameters()).is_cuda))
+        #breakpoint()
         optimizer.zero_grad()
         bs = im.size(0)
         # Output
@@ -73,7 +84,12 @@ def train(data_loader, model, optimizer, cuda, criterion, epoch, log_int=20):
         sk_feat, _ = sk_net(sk) # Sketch encoding and projection to semantic space
         
         # LOSS
-        loss, loss_sem, loss_dom, loss_spa = criterion(im_feat, sk_feat, w2v, im_feat_neg, i)
+        # Note: here we should use criterion.module(), instead of criterion().
+        # Because in DataParallel() uses self.module to point to the input model.
+        # The DataParallel can only parallel forward(), can not parallel backward().
+        # So criterion should NOT be parallel.
+         # Use criterion.module()
+        loss, loss_sem, loss_dom, loss_spa = criterion.module(im_feat, sk_feat, w2v, im_feat_neg, i)
         
         # Gradiensts and update
         loss.backward()
@@ -98,13 +114,13 @@ def train(data_loader, model, optimizer, cuda, criterion, epoch, log_int=20):
 def main():
     print('Prepare data')
     transform = transforms.Compose([transforms.ToTensor()])
-    #breakpoint()
+    ##breakpoint()
     train_data, [valid_sk_data, valid_im_data], [test_sk_data, test_im_data], dict_class = load_data(args, transform)    
-    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.prefetch, pin_memory=True)
-    valid_sk_loader = DataLoader(valid_sk_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=True)
-    valid_im_loader = DataLoader(valid_im_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=True)
-    test_sk_loader = DataLoader(test_sk_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=True)
-    test_im_loader = DataLoader(test_im_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=True)
+    train_loader = DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.prefetch, pin_memory=False)
+    valid_sk_loader = DataLoader(valid_sk_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=False)
+    valid_im_loader = DataLoader(valid_im_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=False)
+    test_sk_loader = DataLoader(test_sk_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=False)
+    test_im_loader = DataLoader(test_im_data, batch_size=3*args.batch_size, num_workers=args.prefetch, pin_memory=False)
 
     if args.log:
         if args.dataset == 'quickdraw_extend':
@@ -141,6 +157,7 @@ def main():
     print('Loss, Optimizer & Evaluation')
     criterion = DetangledJoinDomainLoss(emb_size=args.emb_size, w_sem=args.w_semantic, w_dom=args.w_domain, w_spa=args.w_triplet, lambd=args.grl_lambda)
 
+
     if args.cuda and args.ngpu > 1:
         print('\t* Data Parallel')
         im_net = nn.DataParallel(im_net, device_ids=list(range(args.ngpu)))
@@ -149,15 +166,15 @@ def main():
 
     if args.cuda:
         print('\t* CUDA')
-        im_net, sk_net = im_net.cuda(), sk_net.cuda()
-        criterion = criterion.cuda()
+        im_net, sk_net = im_net.to('cuda:0'), sk_net.to('cuda:0')
+        criterion = criterion.to('cuda:0')
+
 
     criterion.train()
     optimizer = torch.optim.SGD(list(im_net.parameters()) + list(sk_net.parameters()) + list(criterion.parameters()), args.learning_rate, momentum=args.momentum, weight_decay=args.decay, nesterov=True)
 
     print('Check CUDA')
-    #breakpoint()
-
+    ##breakpoint()
 
 
     start_epoch = 0
@@ -179,7 +196,7 @@ def main():
         # Update learning rate
         adjust_learning_rate(optimizer, epoch)
 
-        #breakpoint()
+        ##breakpoint()
         loss_train, loss_sem, loss_dom, loss_spa = train(train_loader, [im_net, sk_net], optimizer, args.cuda, criterion, epoch, args.log_interval)
         map_valid = test(valid_im_loader, valid_sk_loader, [im_net, sk_net], args)
 

@@ -22,6 +22,7 @@ def TUBerlin_Extended(args, transform='None'):
     # Getting the classes
     class_labels_directory = os.path.join(args.data_path, 'sketches')
     list_class = os.listdir(class_labels_directory)
+    #breakpoint()
     # Only folders
     list_class = [name for name in list_class if os.path.isdir(os.path.join(class_labels_directory, name)) ]
     nc = len(list_class)
@@ -31,9 +32,10 @@ def TUBerlin_Extended(args, transform='None'):
     np.random.seed(args.seed)
 
     # Create the class embeddings
-    if os.path.isfile('./data/semantic_labels_tuberlin.npy'):
-        class_emb = np.load('./data/semantic_labels_tuberlin.npy')
-        with open("./data/vocab_tuberlin.pkl", "rb") as input_file:
+    semantic_labels_tuberlin = './src/data/semantic_labels_tuberlin.npy'
+    if os.path.isfile(semantic_labels_tuberlin):
+        class_emb = np.load(semantic_labels_tuberlin)
+        with open("./src/data/vocab_tuberlin.pkl", "rb") as input_file:
             vocab = pickle.load(input_file)
     else:
         class_emb = create_class_embeddings(list_class, args.dataset)
